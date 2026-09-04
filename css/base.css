@@ -55,7 +55,7 @@ section {
     font-weight: 700;
     max-width: 620px;
     font-size: clamp(2.2rem, 4.4vw, 4.35rem);
-    line-height: 1.03;
+    line-height: 1.2;
     letter-spacing: -0.045em;
 }
 
