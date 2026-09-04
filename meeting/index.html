@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>الاجتماع | أحمد خليل</title>
+<link rel="icon" type="image/png" href="../assets/images/ahmad-icon.png">
+<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css"><link rel="stylesheet" href="../css/background.css"><link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/components.css"><link rel="stylesheet" href="../css/sections.css"><link rel="stylesheet" href="../css/responsive.css"><link rel="stylesheet" href="../css/forms.css">
+</head>
+<body class="site-body">
+<main class="form-page"><div class="container form-page-shell">
+<header class="form-page-head"><p class="section-label">MEETING — PRIVATE</p><h1 class="form-page-title">قبل <span>الاجتماع.</span></h1><p class="form-page-intro">هذه الصفحة خاصة بمن يملك الرابط المباشر. سنستخدم المعلومات التي ترسلها لتحضير الاجتماع بشكل أفضل. أسئلة الاجتماع التفصيلية يمكن تحديثها لاحقًا.</p></header>
+<section class="form-card"><form class="form-page-form" id="meeting-form" action="https://api.web3forms.com/submit" method="POST">
+<input type="hidden" name="access_key" value="fae80777-5bb6-4044-beb2-d2f0d09874c3"><input type="hidden" name="subject" value="معلومات اجتماع — Ahmad Khalel"><input type="hidden" name="from_name" value="Ahmad Khalel Meeting Form"><div class="form-page-field"><label for="meeting-name">الاسم</label><input id="meeting-name" name="name" type="text" required></div><div class="form-page-field"><label for="meeting-whatsapp">رقم واتساب</label><input id="meeting-whatsapp" name="whatsapp" type="tel" inputmode="tel" dir="ltr" placeholder="+963 ..." required></div><div class="form-page-field full"><label for="meeting-project">اسم المشروع أو العلامة</label><input id="meeting-project" name="project" type="text" required></div><div class="form-page-field full"><label for="meeting-goal">ما الهدف الأساسي من الاجتماع؟</label><textarea id="meeting-goal" name="goal" placeholder="اكتب باختصار ما تريد الوصول إليه من الاجتماع." required></textarea></div><div class="form-page-submit"><span class="form-page-note">هذه الصفحة غير مرتبطة بالتنقل العام للموقع.</span><button type="submit">إرسال المعلومات ↗</button></div></form><div id="meeting-message" class="page-message" hidden></div></section><a class="form-page-back" href="../">← العودة إلى الموقع</a></div></main>
+<script>document.getElementById('meeting-form').addEventListener('submit',async e=>{e.preventDefault();const f=e.currentTarget,m=document.getElementById('meeting-message');if(!f.checkValidity()){f.reportValidity();return;}try{const r=await fetch(f.action,{method:'POST',body:new FormData(f),headers:{Accept:'application/json'}});const j=await r.json().catch(()=>({}));if(!r.ok||j.success!==true)throw 0;f.reset();m.hidden=false;m.textContent='تم إرسال المعلومات بنجاح.';}catch{m.hidden=false;m.textContent='تعذر إرسال المعلومات حاليًا. حاول مرة أخرى.';}});</script>
+</body></html>

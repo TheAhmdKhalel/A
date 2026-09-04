@@ -1,0 +1,54 @@
+/* =========================================
+   SECTION COMPOSITION
+   ========================================= */
+
+.hero {
+    min-height: calc(100svh - 82px);
+    display: flex;
+    align-items: center;
+    padding-block: clamp(62px, 8vw, 98px);
+}
+
+.hero-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr);
+    gap: clamp(45px, 8vw, 110px);
+    align-items: center;
+}
+
+.hero-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    max-width: 2000px;
+    font-size: clamp(2.8rem, 4vw, 5.9rem);
+    line-height: 1.2;
+    letter-spacing: -0.055em;
+}
+
+.hero-title span {
+    display: block;
+    color: var(--color-accent-deep);
+}
+
+.about {
+    padding-top: calc(var(--section-spacing) + 12px);
+}
+
+.services,
+.work,
+.process {
+    padding-top: var(--section-spacing);
+}
+
+.contact {
+    padding-top: clamp(96px, 12vw, 170px);
+    padding-bottom: clamp(84px, 10vw, 130px);
+}
+
+/* Keep the new section rhythm visually connected. */
+.about + .services,
+.services + .work,
+.work + .process,
+.process + .contact {
+    margin-top: 0;
+}

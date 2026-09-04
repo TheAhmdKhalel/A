@@ -1,0 +1,88 @@
+/* =========================================
+   RESET
+   ========================================= */
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    background: var(--color-bg);
+}
+
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    color: var(--color-text);
+    background: var(--color-bg);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+body,
+button,
+input,
+textarea,
+select {
+    -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    line-height: 1.12;
+    font-weight: 700;
+}
+
+p {
+    font-size: 1rem;
+    line-height: 1.9;
+}
+
+img,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+img {
+    height: auto;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button {
+    border: 0;
+    background: none;
+    cursor: pointer;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+::selection {
+    background: var(--color-primary);
+    color: var(--color-bg);
+}
+
+:focus-visible {
+    outline: 2px solid var(--color-accent-deep);
+    outline-offset: 4px;
+}
