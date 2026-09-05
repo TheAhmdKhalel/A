@@ -440,59 +440,39 @@ function handleContact_(body) {
 // ============================================
 
 function sendContactEmail_(data) {
-
   const recipient =
     String(CONFIG.NOTIFICATION_EMAIL || '').trim();
 
-
-  if (!recipient ||
-      recipient === 'REPLACE_WITH_YOUR_GOOGLE_EMAIL') {
-
+  if (!recipient) {
+    console.warn('NOTIFICATION_EMAIL is empty.');
     return;
   }
 
-
-  const subject =
-    'طلب مشروع جديد — Ahmad Khalel';
-
+  const subject = 'طلب مشروع جديد — Ahmad Khalel';
 
   const body =
     'وصل طلب جديد من موقع Ahmad Khalel\n\n' +
-
-    'الاسم:\n' +
-    data.name +
-    '\n\n' +
-
-    'البريد الإلكتروني:\n' +
-    data.email +
-    '\n\n' +
-
-    'واتساب:\n' +
-    data.phone +
-    '\n\n' +
-
-    'الخدمة:\n' +
-    data.service +
-    '\n\n' +
-
-    'تفاصيل المشروع:\n' +
-    data.message +
-    '\n\n' +
-
-    'المصدر:\n' +
-    'ahmadkhalel.com';
-
+    'الاسم:\n' + data.name + '\n\n' +
+    'البريد الإلكتروني:\n' + data.email + '\n\n' +
+    'واتساب:\n' + data.phone + '\n\n' +
+    'الخدمة:\n' + data.service + '\n\n' +
+    'تفاصيل المشروع:\n' + data.message + '\n\n' +
+    'المصدر:\nhttps://ahmadkhalel.com';
 
   try {
-    MailApp.sendEmail({
-      to: recipient,
-      subject: subject,
-      body: body,
-      replyTo: data.email,
-      name: 'Ahmad Khalel Website'
-    });
+    MailApp.sendEmail(
+      recipient,
+      subject,
+      body
+    );
+
+    console.log('Contact email sent successfully.');
+
   } catch (error) {
-    console.error('Contact email failed:', error);
+    console.error(
+      'Contact email failed:',
+      error
+    );
   }
 }
 
