@@ -21,8 +21,9 @@ document.addEventListener("DOMContentLoaded", () => {
      * نفس Endpoint المستخدم في النماذج الخاصة.
      * ضع رابط Web App الخاص بك محليًا في form-config.js
      */
-    const endpoint =
-        window.AHMAD_FORMS_CONFIG?.endpoint || "";
+    const endpoint = String(
+        window.AHMAD_FORMS_CONFIG?.endpoint || ""
+    ).trim();
 
     const setStatus = (message, type = "") => {
         if (!status) return;
@@ -116,13 +117,17 @@ document.addEventListener("DOMContentLoaded", () => {
             `${countryCode.replace("-CA", "")}${normalizedNumber}`;
 
 
+        const botcheck =
+            form.elements.botcheck?.checked === true;
+
         const payload = {
             action: "contact",
             name,
             email,
             phone,
             service,
-            message
+            message,
+            botcheck
         };
 
 

@@ -334,7 +334,7 @@ function doPost(e) {
     markClientSubmission_(client.row);
 
 
-    // إرسال إشعار بالبريد
+    // إرسال إشعار بالبريد دون جعل فشل البريد يمنع حفظ البيانات
     sendPrivateFormEmail_(
       client,
       formType,
@@ -483,13 +483,17 @@ function sendContactEmail_(data) {
     'ahmadkhalel.com';
 
 
-  MailApp.sendEmail({
-    to: recipient,
-    subject: subject,
-    body: body,
-    replyTo: data.email,
-    name: 'Ahmad Khalel Website'
-  });
+  try {
+    MailApp.sendEmail({
+      to: recipient,
+      subject: subject,
+      body: body,
+      replyTo: data.email,
+      name: 'Ahmad Khalel Website'
+    });
+  } catch (error) {
+    console.error('Contact email failed:', error);
+  }
 }
 
 
@@ -561,12 +565,16 @@ function sendPrivateFormEmail_(
     JSON.stringify(answers, null, 2);
 
 
-  MailApp.sendEmail({
-    to: recipient,
-    subject: subject,
-    body: body,
-    name: 'Ahmad Khalel Forms'
-  });
+  try {
+    MailApp.sendEmail({
+      to: recipient,
+      subject: subject,
+      body: body,
+      name: 'Ahmad Khalel Forms'
+    });
+  } catch (error) {
+    console.error('Private form email failed:', error);
+  }
 }
 
 
