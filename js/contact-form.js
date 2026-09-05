@@ -1,6 +1,6 @@
 /* =========================================
    AHMAD KHALEL — CONTACT FORM
-   Web3Forms
+   Google Apps Script
    ========================================= */
 
 "use strict";
@@ -12,8 +12,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const submitButton = form.querySelector(".form-submit-button");
     const status = document.getElementById("form-status");
-    const originalHTML = submitButton ? submitButton.innerHTML : "";
-    const endpoint = "https://api.web3forms.com/submit";
+
+    const originalHTML = submitButton
+        ? submitButton.innerHTML
+        : "";
+
+    /*
+     * نفس Endpoint المستخدم في النماذج الخاصة.
+     * ضع رابط Web App الخاص بك محليًا في form-config.js
+     */
+    const endpoint =
+        window.AHMAD_FORMS_CONFIG?.endpoint || "";
 
     const setStatus = (message, type = "") => {
         if (!status) return;
@@ -55,6 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
+
         clearStatus();
 
         if (!form.checkValidity()) {
@@ -62,81 +72,139 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const accessKey = form.elements.access_key?.value?.trim();
-
-        if (!accessKey || accessKey === "YOUR_WEB3FORMS_ACCESS_KEY") {
+        if (!endpoint) {
             setStatus(
-                "لم يتم تفعيل استقبال الرسائل بعد. أضف Access Key الخاص بـ Web3Forms.",
+                "تعذر إرسال الطلب حاليًا. لم يتم إعداد الاتصال بالخادم.",
                 "error"
             );
             return;
         }
 
-        const formData = new FormData(form);
+        const name =
+            form.elements.name?.value?.trim() || "";
 
-        formData.set("service", getOptionText("service", ""));
+        const email =
+            form.elements.email?.value?.trim() || "";
 
-        const countryCode = form.elements.whatsapp_country?.value?.trim() || "";
-        const localNumber = form.elements.whatsapp_number?.value?.trim() || "";
-        const normalizedNumber = localNumber.replace(/[^0-9]/g, "");
+        const countryCode =
+            form.elements.whatsapp_country?.value?.trim() || "";
+
+        const localNumber =
+            form.elements.whatsapp_number?.value?.trim() || "";
+
+        const message =
+            form.elements.message?.value?.trim() || "";
+
+        const service =
+            getOptionText("service", "");
+
+
+        const normalizedNumber =
+            localNumber.replace(/[^0-9]/g, "");
+
 
         if (!countryCode || !normalizedNumber) {
-            setStatus("أدخل رقم واتساب صالحًا مع اختيار رمز الدولة.", "error");
+            setStatus(
+                "أدخل رقم واتساب صالحًا مع اختيار رمز الدولة.",
+                "error"
+            );
             return;
         }
 
-        const fullWhatsApp = `${countryCode.replace("-CA", "")} ${normalizedNumber}`;
-        formData.set("whatsapp", fullWhatsApp);
+
+        const phone =
+            `${countryCode.replace("-CA", "")}${normalizedNumber}`;
+
+
+        const payload = {
+            action: "contact",
+            name,
+            email,
+            phone,
+            service,
+            message
+        };
+
 
         try {
+
             setButton(
                 'جاري الإرسال... <span aria-hidden="true">↗</span>',
                 true
             );
 
+
             const response = await fetch(endpoint, {
                 method: "POST",
-                body: formData,
+
                 headers: {
-                    Accept: "application/json"
-                }
+                    "Content-Type":
+                        "text/plain;charset=utf-8",
+
+                    "Accept":
+                        "application/json"
+                },
+
+                body: JSON.stringify(payload)
             });
 
-            const result = await response.json().catch(() => ({}));
 
-            if (!response.ok || result.success !== true) {
+            const result =
+                await response.json().catch(() => ({}));
+
+
+            if (!response.ok || result.ok !== true) {
+
                 throw new Error(
-                    result.message || `Request failed: ${response.status}`
+                    result.error ||
+                    `Request failed: ${response.status}`
                 );
             }
 
+
             form.reset();
+
 
             setStatus(
                 "تم إرسال طلبك بنجاح. شكرًا لك، وسأتواصل معك قريبًا.",
                 "success"
             );
 
+
             setButton(
                 'تم الإرسال <span aria-hidden="true">✓</span>',
                 false
             );
 
+
             window.setTimeout(() => {
-                setButton(originalHTML, false);
+
+                setButton(
+                    originalHTML,
+                    false
+                );
+
             }, 4000);
+
+
         } catch (error) {
+
             console.error(
                 "Contact form submission failed:",
                 error
             );
+
 
             setStatus(
                 "تعذر إرسال الطلب حاليًا. حاول مرة أخرى أو تواصل معي عبر البريد الإلكتروني.",
                 "error"
             );
 
-            setButton(originalHTML, false);
+
+            setButton(
+                originalHTML,
+                false
+            );
         }
     });
 });
