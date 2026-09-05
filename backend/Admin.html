@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ahmad Khalel — Admin</title>
+  <style>
+    :root{font-family:Arial,sans-serif;color:#1d1d1d;background:#f5f3ef}
+    *{box-sizing:border-box}body{margin:0;padding:32px}.wrap{max-width:900px;margin:auto;background:#fff;padding:32px;border:1px solid #e6e2da;border-radius:18px}
+    h1{margin:0 0 8px;font-size:28px}.muted{color:#6f6b63;margin:0 0 28px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}label{display:block;font-weight:700;font-size:14px}input,select{width:100%;margin-top:8px;padding:13px 14px;border:1px solid #d8d2c8;border-radius:10px;font:inherit;background:#fff}button{margin-top:22px;padding:13px 18px;border:0;border-radius:10px;background:#1d1d1d;color:#fff;font:inherit;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.result{margin-top:24px;padding:18px;border-radius:12px;background:#f1efe9;display:none}.result strong{display:block;margin-bottom:8px}.result code{display:block;word-break:break-all;padding:10px;background:#fff;border-radius:8px;margin-top:8px}.status{margin-top:16px;min-height:22px}.ok{color:#2d6a4f}.err{color:#a33}
+    @media(max-width:680px){.grid{grid-template-columns:1fr}body{padding:16px}.wrap{padding:22px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Client / Project</h1>
+    <p class="muted">Create a client record, generate a unique project token, and get the private form link.</p>
+    <form id="admin-form">
+      <div class="grid">
+        <div><label>Client ID<input name="clientId" placeholder="AK-2026-001" required></label></div>
+        <div><label>Project ID<input name="projectId" placeholder="AK-2026-001-P01" required></label></div>
+        <div><label>Service<select name="service" required><option value="Identity">Identity</option><option value="Website">Website</option><option value="Identity + Website">Identity + Website</option></select></label></div>
+        <div><label>WhatsApp<input name="whatsapp" placeholder="+9639XXXXXXXX" required></label></div>
+        <div><label>Email<input type="email" name="email" placeholder="client@example.com" required></label></div>
+        <div><label>Status<select name="status"><option value="Active">Active</option><option value="Revoked">Revoked</option></select></label></div>
+      </div>
+      <button id="create" type="submit">Create client & generate link</button>
+    </form>
+    <div class="status" id="status"></div>
+    <section class="result" id="result">
+      <strong>Client created</strong>
+      <div>Client ID: <span id="out-client"></span></div>
+      <div>Project ID: <span id="out-project"></span></div>
+      <div>Token:</div><code id="out-token"></code>
+      <div>Private form URL:</div><code id="out-url"></code>
+    </section>
+  </main>
+  <script>
+const form=document.getElementById('admin-form');
+const btn=document.getElementById('create');
+const status=document.getElementById('status');
+const result=document.getElementById('result');
+
+function showStatus(text, ok=false){
+  status.className='status '+(ok?'ok':'err');
+  status.textContent=text;
+}
+form.addEventListener('submit',(e)=>{
+  e.preventDefault();
+  result.style.display='none';
+  showStatus('Creating…', true);
+  btn.disabled=true;
+  const payload=Object.fromEntries(new FormData(form).entries());
+  if (!window.google || !google.script || !google.script.run){
+    showStatus('Open this page from the deployed Google Apps Script Admin URL.');
+    btn.disabled=false;
+    return;
+  }
+  google.script.run
+    .withSuccessHandler((data)=>{
+      document.getElementById('out-client').textContent=data.clientId;
+      document.getElementById('out-project').textContent=data.projectId;
+      document.getElementById('out-token').textContent=data.token;
+      document.getElementById('out-url').textContent=data.formUrl;
+      result.style.display='block';
+      showStatus('Client created successfully.', true);
+      btn.disabled=false;
+    })
+    .withFailureHandler((err)=>{
+      showStatus((err && err.message) || 'Could not create client.');
+      btn.disabled=false;
+    })
+    .createClientFromAdmin(payload);
+});
+</script>
+</body>
+</html>

@@ -75,10 +75,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const formData = new FormData(form);
 
         formData.set("service", getOptionText("service", ""));
-        formData.set(
-            "budget",
-            getOptionText("budget", "غير محددة حاليًا")
-        );
+
+        const countryCode = form.elements.whatsapp_country?.value?.trim() || "";
+        const localNumber = form.elements.whatsapp_number?.value?.trim() || "";
+        const normalizedNumber = localNumber.replace(/[^0-9]/g, "");
+
+        if (!countryCode || !normalizedNumber) {
+            setStatus("أدخل رقم واتساب صالحًا مع اختيار رمز الدولة.", "error");
+            return;
+        }
+
+        const fullWhatsApp = `${countryCode.replace("-CA", "")} ${normalizedNumber}`;
+        formData.set("whatsapp", fullWhatsApp);
 
         try {
             setButton(

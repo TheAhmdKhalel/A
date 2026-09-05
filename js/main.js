@@ -329,3 +329,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.head.appendChild(style);
 })();
+
+/* =========================================
+   SERVICES ACCORDION
+   ========================================= */
+
+document.addEventListener("DOMContentLoaded", () => {
+    const serviceItems = document.querySelectorAll(".service-accordion");
+
+    serviceItems.forEach((item) => {
+        const toggle = item.querySelector(".service-toggle");
+        const details = item.querySelector(".service-details");
+
+        if (!toggle || !details) return;
+
+        toggle.addEventListener("click", () => {
+            const isOpen = item.classList.contains("is-open");
+
+            serviceItems.forEach((otherItem) => {
+                const otherToggle = otherItem.querySelector(".service-toggle");
+                const otherDetails = otherItem.querySelector(".service-details");
+
+                otherItem.classList.remove("is-open");
+
+                if (otherToggle) {
+                    otherToggle.setAttribute("aria-expanded", "false");
+                }
+
+                if (otherDetails) {
+                    otherDetails.hidden = true;
+                }
+            });
+
+            if (isOpen) return;
+
+            item.classList.add("is-open");
+            toggle.setAttribute("aria-expanded", "true");
+            details.hidden = false;
+        });
+    });
+});
