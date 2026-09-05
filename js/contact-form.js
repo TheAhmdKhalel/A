@@ -25,6 +25,12 @@ document.addEventListener("DOMContentLoaded", () => {
         window.AHMAD_FORMS_CONFIG?.endpoint || ""
     ).trim();
 
+    if (!endpoint) {
+        console.error(
+            "Ahmad Khalel Contact Form: form-config.js endpoint is missing."
+        );
+    }
+
     const setStatus = (message, type = "") => {
         if (!status) return;
 
