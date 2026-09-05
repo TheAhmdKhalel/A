@@ -876,3 +876,11 @@ function requireAdmin_() {
     );
   }
 }
+
+function testEmail() {
+  MailApp.sendEmail({
+    to: CONFIG.NOTIFICATION_EMAIL,
+    subject: 'اختبار Ahmad Khalel',
+    body: 'هذا اختبار لإرسال البريد من Google Apps Script.'
+  });
+}
