@@ -417,8 +417,9 @@ function handleContact_(body) {
   ]);
 
 
-  // إرسال البريد
-  sendContactEmail_({
+  // ضع رسالة البريد في طابور مستقل بعد حفظ الطلب.
+  // هذا يمنع إرسال البريد من تعطيل استجابة الموقع.
+  queueContactEmail_({
     name,
     email,
     phone,
@@ -430,7 +431,8 @@ function handleContact_(body) {
   return json_({
     ok: true,
     success: true,
-    submitted: true
+    submitted: true,
+    emailQueued: true
   });
 }
 
@@ -439,16 +441,31 @@ function handleContact_(body) {
 // CONTACT EMAIL
 // ============================================
 
-function sendContactEmail_(data) {
+function queueContactEmail_(data) {
+
+  const sheet = getOrCreateSheet_('Email Queue');
+
+  ensureHeaders_(sheet, [
+    'Queued At',
+    'Type',
+    'To',
+    'Subject',
+    'Body',
+    'Status',
+    'Processed At',
+    'Error'
+  ]);
+
   const recipient =
     String(CONFIG.NOTIFICATION_EMAIL || '').trim();
 
   if (!recipient) {
-    console.warn('NOTIFICATION_EMAIL is empty.');
+    console.error('NOTIFICATION_EMAIL is empty.');
     return;
   }
 
-  const subject = 'طلب مشروع جديد — Ahmad Khalel';
+  const subject =
+    'طلب مشروع جديد — Ahmad Khalel';
 
   const body =
     'وصل طلب جديد من موقع Ahmad Khalel\n\n' +
@@ -459,21 +476,202 @@ function sendContactEmail_(data) {
     'تفاصيل المشروع:\n' + data.message + '\n\n' +
     'المصدر:\nhttps://ahmadkhalel.com';
 
-  try {
-    MailApp.sendEmail(
-      recipient,
-      subject,
-      body
-    );
+  sheet.appendRow([
+    new Date(),
+    'contact',
+    recipient,
+    subject,
+    body,
+    'PENDING',
+    '',
+    ''
+  ]);
 
-    console.log('Contact email sent successfully.');
+  scheduleEmailQueueProcessor_();
+}
 
-  } catch (error) {
-    console.error(
-      'Contact email failed:',
-      error
-    );
+
+function scheduleEmailQueueProcessor_() {
+
+  const properties =
+    PropertiesService.getScriptProperties();
+
+  const lock = LockService.getScriptLock();
+
+  if (!lock.tryLock(3000)) {
+    return;
   }
+
+  try {
+
+    if (
+      properties.getProperty('CONTACT_EMAIL_TRIGGER') === '1'
+    ) {
+      return;
+    }
+
+    ScriptApp
+      .newTrigger('processEmailQueue_')
+      .timeBased()
+      .after(1000)
+      .create();
+
+    properties.setProperty(
+      'CONTACT_EMAIL_TRIGGER',
+      '1'
+    );
+
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+
+function processEmailQueue_() {
+
+  const lock = LockService.getScriptLock();
+
+  if (!lock.tryLock(10000)) {
+    return;
+  }
+
+  const properties =
+    PropertiesService.getScriptProperties();
+
+  try {
+
+    const sheet =
+      getOrCreateSheet_('Email Queue');
+
+    ensureHeaders_(sheet, [
+      'Queued At',
+      'Type',
+      'To',
+      'Subject',
+      'Body',
+      'Status',
+      'Processed At',
+      'Error'
+    ]);
+
+    const lastRow = sheet.getLastRow();
+
+    if (lastRow < 2) {
+      return;
+    }
+
+    const values =
+      sheet
+        .getRange(2, 1, lastRow - 1, 8)
+        .getValues();
+
+    for (let i = 0; i < values.length; i++) {
+
+      const rowNumber = i + 2;
+      const row = values[i];
+
+      const status =
+        String(row[5] || '').trim().toUpperCase();
+
+      if (status !== 'PENDING') {
+        continue;
+      }
+
+      const to = String(row[2] || '').trim();
+      const subject = String(row[3] || '');
+      const body = String(row[4] || '');
+
+      if (!to) {
+
+        sheet
+          .getRange(rowNumber, 6, 1, 3)
+          .setValues([[
+            'FAILED',
+            new Date(),
+            'Recipient email is empty.'
+          ]]);
+
+        continue;
+      }
+
+      try {
+
+        MailApp.sendEmail(
+          to,
+          subject,
+          body
+        );
+
+        sheet
+          .getRange(rowNumber, 6, 1, 3)
+          .setValues([[
+            'SENT',
+            new Date(),
+            ''
+          ]]);
+
+      } catch (error) {
+
+        sheet
+          .getRange(rowNumber, 6, 1, 3)
+          .setValues([[
+            'FAILED',
+            new Date(),
+            String(
+              error &&
+              error.message ||
+              error
+            )
+          ]]);
+      }
+    }
+
+    properties.deleteProperty(
+      'CONTACT_EMAIL_TRIGGER'
+    );
+
+    // If another request arrived while this trigger was running,
+    // schedule one more pass for remaining PENDING rows.
+    const refreshedLastRow =
+      sheet.getLastRow();
+
+    if (refreshedLastRow >= 2) {
+
+      const refreshed =
+        sheet
+          .getRange(
+            2,
+            6,
+            refreshedLastRow - 1,
+            1
+          )
+          .getValues();
+
+      const hasPending =
+        refreshed.some(row =>
+          String(row[0] || '')
+            .trim()
+            .toUpperCase() === 'PENDING'
+        );
+
+      if (hasPending) {
+        scheduleEmailQueueProcessor_();
+      }
+    }
+
+  } finally {
+    properties.deleteProperty(
+      'CONTACT_EMAIL_TRIGGER'
+    );
+    lock.releaseLock();
+  }
+}
+
+
+function sendContactEmail_(data) {
+  // Kept as a compatibility wrapper for any existing calls.
+  queueContactEmail_(data);
+  return true;
 }
 
 
@@ -556,6 +754,44 @@ function sendPrivateFormEmail_(
     console.error('Private form email failed:', error);
   }
 }
+
+function queueGenericEmail_(data) {
+
+  const sheet = getOrCreateSheet_('Email Queue');
+
+  ensureHeaders_(sheet, [
+    'Queued At',
+    'Type',
+    'To',
+    'Subject',
+    'Body',
+    'Status',
+    'Processed At',
+    'Error'
+  ]);
+
+  const recipient =
+    String(data.to || '').trim();
+
+  if (!recipient) {
+    console.error('Email recipient is empty.');
+    return;
+  }
+
+  sheet.appendRow([
+    new Date(),
+    String(data.type || 'notification'),
+    recipient,
+    String(data.subject || ''),
+    String(data.body || ''),
+    'PENDING',
+    '',
+    ''
+  ]);
+
+  scheduleEmailQueueProcessor_();
+}
+
 
 
 // ============================================
@@ -855,12 +1091,4 @@ function requireAdmin_() {
       'Admin access denied.'
     );
   }
-}
-
-function testEmail() {
-  MailApp.sendEmail({
-    to: CONFIG.NOTIFICATION_EMAIL,
-    subject: 'اختبار Ahmad Khalel',
-    body: 'هذا اختبار لإرسال البريد من Google Apps Script.'
-  });
 }
