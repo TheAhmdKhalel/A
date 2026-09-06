@@ -44,22 +44,37 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const postToSheets = async (payload) => {
-        const response = await fetch(endpoint, {
+        const data = new URLSearchParams();
+        data.set("action", "contact");
+        data.set("name", payload.name);
+        data.set("email", payload.email);
+        data.set("phone", payload.phone);
+        data.set("service", payload.service);
+        data.set("message", payload.message);
+
+        // Apps Script Web Apps may redirect the POST response and trigger
+        // browser CORS errors. sendBeacon queues the POST without needing
+        // to read the cross-origin response.
+        if (navigator.sendBeacon) {
+            const queued = navigator.sendBeacon(
+                endpoint,
+                new Blob([data.toString()], {
+                    type: "application/x-www-form-urlencoded;charset=UTF-8"
+                })
+            );
+
+            if (queued) return { ok: true };
+        }
+
+        // Fallback for browsers where sendBeacon is unavailable/rejected.
+        await fetch(endpoint, {
             method: "POST",
-            headers: {
-                "Content-Type": "text/plain;charset=utf-8",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify(payload)
+            body: data,
+            mode: "no-cors",
+            keepalive: true
         });
 
-        const raw = await response.text();
-        let result = {};
-        try { result = JSON.parse(raw); } catch (_) {}
-
-        if (!response.ok) throw new Error(`SHEETS_${response.status}`);
-        if (result.ok === false) throw new Error(result.error || "SHEETS_REJECTED");
-        return result;
+        return { ok: true };
     };
 
     const sendWeb3Email = async (payload) => {
