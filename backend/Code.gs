@@ -222,11 +222,22 @@ function doPost(e) {
 
   try {
 
-    const body = JSON.parse(
-      (e &&
-        e.postData &&
-        e.postData.contents) || '{}'
-    );
+    // Accept both JSON POST bodies and application/x-www-form-urlencoded
+    // requests (used by sendBeacon from the public contact form).
+    let body = {};
+    const rawBody = String(
+      (e && e.postData && e.postData.contents) || ''
+    ).trim();
+
+    if (rawBody) {
+      try {
+        body = JSON.parse(rawBody);
+      } catch (_) {
+        body = (e && e.parameter) || {};
+      }
+    } else {
+      body = (e && e.parameter) || {};
+    }
 
 
     // ========================================
