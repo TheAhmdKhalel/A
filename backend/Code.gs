@@ -22,6 +22,7 @@ const CONFIG = {
   SHEETS: {
     CONTACT: 'Contact',
     CLIENTS: 'Clients',
+    MEETING: 'Meeting Forms',
     IDENTITY: 'Identity Forms',
     WEBSITE: 'Website Forms',
     BOTH: 'Identity + Website Forms'
@@ -76,7 +77,8 @@ function doGet(e) {
       verified: verified,
       clientId: verified ? client.clientId : '',
       projectId: verified ? client.projectId : '',
-      service: verified ? client.service : ''
+      service: verified ? client.service : '',
+      email: verified ? client.email : ''
     });
 
   } catch (err) {
@@ -128,6 +130,7 @@ function createClient_(client) {
   }
 
   if (
+    service !== 'Meeting' &&
     service !== 'Identity' &&
     service !== 'Website' &&
     service !== 'Identity + Website'
@@ -178,11 +181,13 @@ function createClient_(client) {
     .replace(/\/$/, '');
 
   const formPath =
-    service === 'Identity'
-      ? 'form-identity'
-      : service === 'Website'
-        ? 'form-website'
-        : 'form-identity-website';
+    service === 'Meeting'
+      ? 'meeting'
+      : service === 'Identity'
+        ? 'form-identity'
+        : service === 'Website'
+          ? 'form-website'
+          : 'form-identity-website';
 
   return {
     clientId,
@@ -276,7 +281,11 @@ function doPost(e) {
 
     let sheetName = '';
 
-    if (formType === 'identity') {
+    if (formType === 'meeting') {
+
+      sheetName = CONFIG.SHEETS.MEETING;
+
+    } else if (formType === 'identity') {
 
       sheetName = CONFIG.SHEETS.IDENTITY;
 
@@ -334,19 +343,16 @@ function doPost(e) {
     markClientSubmission_(client.row);
 
 
-    // إرسال إشعار بالبريد دون جعل فشل البريد يمنع حفظ البيانات
-    sendPrivateFormEmail_(
-      client,
-      formType,
-      answers
-    );
-
+    // Email notifications are handled by Web3Forms on the client.
+    // Google Apps Script is responsible here for verification + Sheets only.
 
     return json_({
       ok: true,
       submitted: true,
       clientId: client.clientId,
-      projectId: client.projectId
+      projectId: client.projectId,
+      service: client.service,
+      email: client.email
     });
 
 
@@ -417,381 +423,15 @@ function handleContact_(body) {
   ]);
 
 
-  // ضع رسالة البريد في طابور مستقل بعد حفظ الطلب.
-  // هذا يمنع إرسال البريد من تعطيل استجابة الموقع.
-  queueContactEmail_({
-    name,
-    email,
-    phone,
-    service,
-    message
-  });
-
+  // Email notifications are handled by Web3Forms on the public site.
 
   return json_({
     ok: true,
     success: true,
     submitted: true,
-    emailQueued: true
+    emailProvider: 'web3forms'
   });
 }
-
-
-// ============================================
-// CONTACT EMAIL
-// ============================================
-
-function queueContactEmail_(data) {
-
-  const sheet = getOrCreateSheet_('Email Queue');
-
-  ensureHeaders_(sheet, [
-    'Queued At',
-    'Type',
-    'To',
-    'Subject',
-    'Body',
-    'Status',
-    'Processed At',
-    'Error'
-  ]);
-
-  const recipient =
-    String(CONFIG.NOTIFICATION_EMAIL || '').trim();
-
-  if (!recipient) {
-    console.error('NOTIFICATION_EMAIL is empty.');
-    return;
-  }
-
-  const subject =
-    'طلب مشروع جديد — Ahmad Khalel';
-
-  const body =
-    'وصل طلب جديد من موقع Ahmad Khalel\n\n' +
-    'الاسم:\n' + data.name + '\n\n' +
-    'البريد الإلكتروني:\n' + data.email + '\n\n' +
-    'واتساب:\n' + data.phone + '\n\n' +
-    'الخدمة:\n' + data.service + '\n\n' +
-    'تفاصيل المشروع:\n' + data.message + '\n\n' +
-    'المصدر:\nhttps://ahmadkhalel.com';
-
-  sheet.appendRow([
-    new Date(),
-    'contact',
-    recipient,
-    subject,
-    body,
-    'PENDING',
-    '',
-    ''
-  ]);
-
-  scheduleEmailQueueProcessor_();
-}
-
-
-function scheduleEmailQueueProcessor_() {
-
-  const properties =
-    PropertiesService.getScriptProperties();
-
-  const lock = LockService.getScriptLock();
-
-  if (!lock.tryLock(3000)) {
-    return;
-  }
-
-  try {
-
-    if (
-      properties.getProperty('CONTACT_EMAIL_TRIGGER') === '1'
-    ) {
-      return;
-    }
-
-    ScriptApp
-      .newTrigger('processEmailQueue_')
-      .timeBased()
-      .after(1000)
-      .create();
-
-    properties.setProperty(
-      'CONTACT_EMAIL_TRIGGER',
-      '1'
-    );
-
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-
-function processEmailQueue_() {
-
-  const lock = LockService.getScriptLock();
-
-  if (!lock.tryLock(10000)) {
-    return;
-  }
-
-  const properties =
-    PropertiesService.getScriptProperties();
-
-  try {
-
-    const sheet =
-      getOrCreateSheet_('Email Queue');
-
-    ensureHeaders_(sheet, [
-      'Queued At',
-      'Type',
-      'To',
-      'Subject',
-      'Body',
-      'Status',
-      'Processed At',
-      'Error'
-    ]);
-
-    const lastRow = sheet.getLastRow();
-
-    if (lastRow < 2) {
-      return;
-    }
-
-    const values =
-      sheet
-        .getRange(2, 1, lastRow - 1, 8)
-        .getValues();
-
-    for (let i = 0; i < values.length; i++) {
-
-      const rowNumber = i + 2;
-      const row = values[i];
-
-      const status =
-        String(row[5] || '').trim().toUpperCase();
-
-      if (status !== 'PENDING') {
-        continue;
-      }
-
-      const to = String(row[2] || '').trim();
-      const subject = String(row[3] || '');
-      const body = String(row[4] || '');
-
-      if (!to) {
-
-        sheet
-          .getRange(rowNumber, 6, 1, 3)
-          .setValues([[
-            'FAILED',
-            new Date(),
-            'Recipient email is empty.'
-          ]]);
-
-        continue;
-      }
-
-      try {
-
-        MailApp.sendEmail(
-          to,
-          subject,
-          body
-        );
-
-        sheet
-          .getRange(rowNumber, 6, 1, 3)
-          .setValues([[
-            'SENT',
-            new Date(),
-            ''
-          ]]);
-
-      } catch (error) {
-
-        sheet
-          .getRange(rowNumber, 6, 1, 3)
-          .setValues([[
-            'FAILED',
-            new Date(),
-            String(
-              error &&
-              error.message ||
-              error
-            )
-          ]]);
-      }
-    }
-
-    properties.deleteProperty(
-      'CONTACT_EMAIL_TRIGGER'
-    );
-
-    // If another request arrived while this trigger was running,
-    // schedule one more pass for remaining PENDING rows.
-    const refreshedLastRow =
-      sheet.getLastRow();
-
-    if (refreshedLastRow >= 2) {
-
-      const refreshed =
-        sheet
-          .getRange(
-            2,
-            6,
-            refreshedLastRow - 1,
-            1
-          )
-          .getValues();
-
-      const hasPending =
-        refreshed.some(row =>
-          String(row[0] || '')
-            .trim()
-            .toUpperCase() === 'PENDING'
-        );
-
-      if (hasPending) {
-        scheduleEmailQueueProcessor_();
-      }
-    }
-
-  } finally {
-    properties.deleteProperty(
-      'CONTACT_EMAIL_TRIGGER'
-    );
-    lock.releaseLock();
-  }
-}
-
-
-function sendContactEmail_(data) {
-  // Kept as a compatibility wrapper for any existing calls.
-  queueContactEmail_(data);
-  return true;
-}
-
-
-// ============================================
-// PRIVATE FORM EMAIL
-// ============================================
-
-function sendPrivateFormEmail_(
-  client,
-  formType,
-  answers
-) {
-
-  const recipient =
-    String(CONFIG.NOTIFICATION_EMAIL || '').trim();
-
-
-  if (!recipient ||
-      recipient === 'REPLACE_WITH_YOUR_GOOGLE_EMAIL') {
-
-    return;
-  }
-
-
-  const formNames = {
-    'identity': 'Visual Identity Form',
-    'website': 'Website Form',
-    'identity-website': 'Identity + Website Form'
-  };
-
-
-  const formName =
-    formNames[formType] || formType;
-
-
-  const subject =
-    'نموذج جديد — ' + formName +
-    ' — ' + client.clientId;
-
-
-  const body =
-    'تم استلام نموذج جديد من أحد العملاء.\n\n' +
-
-    'Client ID:\n' +
-    client.clientId +
-    '\n\n' +
-
-    'Project ID:\n' +
-    client.projectId +
-    '\n\n' +
-
-    'Service:\n' +
-    client.service +
-    '\n\n' +
-
-    'WhatsApp:\n' +
-    client.whatsapp +
-    '\n\n' +
-
-    'Email:\n' +
-    client.email +
-    '\n\n' +
-
-    'Form:\n' +
-    formName +
-    '\n\n' +
-
-    'Answers:\n' +
-    JSON.stringify(answers, null, 2);
-
-
-  try {
-    MailApp.sendEmail({
-      to: recipient,
-      subject: subject,
-      body: body,
-      name: 'Ahmad Khalel Forms'
-    });
-  } catch (error) {
-    console.error('Private form email failed:', error);
-  }
-}
-
-function queueGenericEmail_(data) {
-
-  const sheet = getOrCreateSheet_('Email Queue');
-
-  ensureHeaders_(sheet, [
-    'Queued At',
-    'Type',
-    'To',
-    'Subject',
-    'Body',
-    'Status',
-    'Processed At',
-    'Error'
-  ]);
-
-  const recipient =
-    String(data.to || '').trim();
-
-  if (!recipient) {
-    console.error('Email recipient is empty.');
-    return;
-  }
-
-  sheet.appendRow([
-    new Date(),
-    String(data.type || 'notification'),
-    recipient,
-    String(data.subject || ''),
-    String(data.body || ''),
-    'PENDING',
-    '',
-    ''
-  ]);
-
-  scheduleEmailQueueProcessor_();
-}
-
 
 
 // ============================================

@@ -4,6 +4,7 @@
 Create one Google Sheet and copy its spreadsheet ID into `backend/Code.gs` as `SPREADSHEET_ID`.
 The script creates these tabs automatically:
 - Clients
+- Meeting Forms
 - Identity Forms
 - Website Forms
 - Identity + Website Forms
@@ -31,3 +32,7 @@ It returns a private website URL such as:
 Do not publish the Admin page as a normal GitHub Pages page. Keep it inside the restricted Admin Web App deployment.
 
 The public forms deployment must **not** be used for admin creation.
+
+## Email notifications
+
+Email notifications are sent by Web3Forms from the website after a successful Google Sheets save. The Web3Forms access key is stored in `js/form-config.js` and is intentionally a public form access key, not a Google credential. The same flow is used for Meeting, Identity, Website, Identity + Website, and the public Contact form.

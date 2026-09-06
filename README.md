@@ -32,10 +32,11 @@ The private identity form now expects a unique `?token=` link and verifies the c
 
 
 ## Current form system
-- Public form routes: `/form-identity/`, `/form-website/`, `/form-identity-website/`
+- Public/private form routes: `/meeting/`, `/form-identity/`, `/form-website/`, `/form-identity-website/`
 - Private project invitation: `?token=...`
 - WhatsApp verification before access
 - Google Sheets storage through Google Apps Script
+- Web3Forms email notifications (up to the account's monthly plan limit)
 - Restricted Admin Web App creates Client ID, Project ID, Service, WhatsApp, Email, and Unique Token
 
 ## Private service forms

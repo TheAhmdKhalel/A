@@ -97,6 +97,26 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(result.duplicate ? 'DUPLICATE' : 'SUBMIT_FAILED');
       }
 
+      try {
+        await guard.notify({
+          formType: 'identity',
+          token,
+          whatsapp: form.querySelector('[name="whatsapp"]').value,
+          clientId: result.clientId || clientIdField.value,
+          projectId: result.projectId || projectIdField.value,
+          service: result.service || 'Identity',
+          email: result.email || '',
+          answers
+        });
+      } catch (emailError) {
+        console.error('Web3Forms notification failed after Sheets save:', emailError);
+        form.reset();
+        fields.hidden = true;
+        verifyBox.hidden = true;
+        setMessage(formMsg, 'تم حفظ معلومات الهوية بنجاح، لكن تعذر إرسال إشعار البريد الآن.', true);
+        return;
+      }
+
       form.reset();
       fields.hidden = true;
       verifyBox.hidden = true;

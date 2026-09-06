@@ -87,6 +87,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!result.ok) throw new Error(result.duplicate ? 'DUPLICATE' : 'SUBMIT_FAILED');
 
+      try {
+        await guard.notify({
+          formType: 'website',
+          token,
+          whatsapp: websitePhone.value,
+          clientId: result.clientId || clientIdField.value,
+          projectId: result.projectId || projectIdField.value,
+          service: result.service || 'Website',
+          email: result.email || '',
+          answers
+        });
+      } catch (emailError) {
+        console.error('Web3Forms notification failed after Sheets save:', emailError);
+        form.reset();
+        fields.hidden = true;
+        setMessage(formMsg, 'تم حفظ معلومات الموقع بنجاح، لكن تعذر إرسال إشعار البريد الآن.', true);
+        return;
+      }
+
       form.reset();
       fields.hidden = true;
       setMessage(formMsg, 'تم إرسال معلومات الموقع بنجاح.', true);

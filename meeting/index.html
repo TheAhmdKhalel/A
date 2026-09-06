@@ -1,16 +1,188 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>الاجتماع | أحمد خليل</title>
 <link rel="icon" type="image/png" href="../assets/images/ahmad-icon.png">
-<link rel="stylesheet" href="../css/variables.css"><link rel="stylesheet" href="../css/reset.css"><link rel="stylesheet" href="../css/background.css"><link rel="stylesheet" href="../css/base.css"><link rel="stylesheet" href="../css/components.css"><link rel="stylesheet" href="../css/sections.css"><link rel="stylesheet" href="../css/responsive.css"><link rel="stylesheet" href="../css/forms.css">
+<link rel="stylesheet" href="../css/variables.css">
+<link rel="stylesheet" href="../css/reset.css">
+<link rel="stylesheet" href="../css/background.css">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/sections.css">
+<link rel="stylesheet" href="../css/responsive.css">
+<link rel="stylesheet" href="../css/forms.css">
 </head>
 <body class="site-body">
-<main class="form-page"><div class="container form-page-shell">
-<header class="form-page-head"><p class="section-label">MEETING — PRIVATE</p><h1 class="form-page-title">قبل <span>الاجتماع.</span></h1><p class="form-page-intro">هذه الصفحة خاصة بمن يملك الرابط المباشر. سنستخدم المعلومات التي ترسلها لتحضير الاجتماع بشكل أفضل. أسئلة الاجتماع التفصيلية يمكن تحديثها لاحقًا.</p></header>
-<section class="form-card"><form class="form-page-form" id="meeting-form" action="https://api.web3forms.com/submit" method="POST">
-<input type="hidden" name="access_key" value="fae80777-5bb6-4044-beb2-d2f0d09874c3"><input type="hidden" name="subject" value="معلومات اجتماع — Ahmad Khalel"><input type="hidden" name="from_name" value="Ahmad Khalel Meeting Form"><div class="form-page-field"><label for="meeting-name">الاسم</label><input id="meeting-name" name="name" type="text" required></div><div class="form-page-field"><label for="meeting-whatsapp">رقم واتساب</label><input id="meeting-whatsapp" name="whatsapp" type="tel" inputmode="tel" dir="ltr" placeholder="+963 ..." required></div><div class="form-page-field full"><label for="meeting-project">اسم المشروع أو العلامة</label><input id="meeting-project" name="project" type="text" required></div><div class="form-page-field full"><label for="meeting-goal">ما الهدف الأساسي من الاجتماع؟</label><textarea id="meeting-goal" name="goal" placeholder="اكتب باختصار ما تريد الوصول إليه من الاجتماع." required></textarea></div><div class="form-page-submit"><span class="form-page-note">هذه الصفحة غير مرتبطة بالتنقل العام للموقع.</span><button type="submit">إرسال المعلومات ↗</button></div></form><div id="meeting-message" class="page-message" hidden></div></section><a class="form-page-back" href="../">← العودة إلى الموقع</a></div></main>
-<script>document.getElementById('meeting-form').addEventListener('submit',async e=>{e.preventDefault();const f=e.currentTarget,m=document.getElementById('meeting-message');if(!f.checkValidity()){f.reportValidity();return;}try{const r=await fetch(f.action,{method:'POST',body:new FormData(f),headers:{Accept:'application/json'}});const j=await r.json().catch(()=>({}));if(!r.ok||j.success!==true)throw 0;f.reset();m.hidden=false;m.textContent='تم إرسال المعلومات بنجاح.';}catch{m.hidden=false;m.textContent='تعذر إرسال المعلومات حاليًا. حاول مرة أخرى.';}});</script>
-</body></html>
+<main class="form-page">
+  <div class="container form-page-shell">
+    <header class="form-page-head">
+      <p class="section-label">MEETING — PRIVATE</p>
+      <h1 class="form-page-title">قبل <span>الاجتماع.</span></h1>
+      <p class="form-page-intro">هذه الصفحة خاصة بمن يملك الرابط المباشر. أدخل رقم WhatsApp المرتبط بالرابط للمتابعة.</p>
+    </header>
+
+    <section class="form-card">
+      <div id="form-verification" class="form-verification">
+        <div class="form-page-field full">
+          <label for="verify-whatsapp-number">رقم WhatsApp</label>
+          <input id="verify-whatsapp-number" type="tel" inputmode="tel" dir="ltr" placeholder="+963 ..." required>
+        </div>
+        <div class="form-page-submit">
+          <span id="verify-message" class="page-message" hidden></span>
+          <button id="verify-whatsapp" type="button">التحقق والمتابعة ↗</button>
+        </div>
+      </div>
+
+      <form class="form-page-form" id="meeting-form" hidden>
+        <input type="hidden" id="form-token" name="token">
+        <input type="hidden" id="verified-client-id" name="clientId">
+        <input type="hidden" id="verified-project-id" name="projectId">
+        <input type="hidden" id="meeting-whatsapp" name="whatsapp">
+
+        <div class="form-page-field">
+          <label for="meeting-name">الاسم</label>
+          <input id="meeting-name" name="name" type="text" required>
+        </div>
+
+        <div class="form-page-field">
+          <label for="meeting-email">البريد الإلكتروني</label>
+          <input id="meeting-email" name="email" type="email" required>
+        </div>
+
+        <div class="form-page-field full">
+          <label for="meeting-project">اسم المشروع أو العلامة</label>
+          <input id="meeting-project" name="project" type="text" required>
+        </div>
+
+        <div class="form-page-field full">
+          <label for="meeting-goal">ما الهدف الأساسي من الاجتماع؟</label>
+          <textarea id="meeting-goal" name="goal" placeholder="اكتب باختصار ما تريد الوصول إليه من الاجتماع." required></textarea>
+        </div>
+
+        <div class="form-page-submit">
+          <span class="form-page-note">سيتم حفظ المعلومات وإرسال إشعار إلى أحمد خليل.</span>
+          <button type="submit">إرسال المعلومات ↗</button>
+        </div>
+      </form>
+
+      <div id="form-message" class="page-message" hidden></div>
+    </section>
+
+    <a class="form-page-back" href="../">← العودة إلى الموقع</a>
+  </div>
+</main>
+
+<script src="../js/form-config.js"></script>
+<script src="../js/form-guard.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const g = window.AHMAD_FORM_GUARD;
+  const form = document.getElementById('meeting-form');
+  const box = document.getElementById('form-verification');
+  const verifyBtn = document.getElementById('verify-whatsapp');
+  const verifyInput = document.getElementById('verify-whatsapp-number');
+  const verifyMsg = document.getElementById('verify-message');
+  const formMsg = document.getElementById('form-message');
+  const token = g.getToken();
+
+  const msg = (el, text, success = false) => {
+    el.hidden = !text;
+    el.textContent = text;
+    el.classList.toggle('is-success', success);
+  };
+
+  if (!token || !g.config.endpoint) {
+    msg(verifyMsg, !token
+      ? 'هذا النموذج يحتاج إلى رابط خاص أُرسل لك.'
+      : 'هذا النموذج غير مهيأ للاتصال حاليًا.');
+    verifyBtn.disabled = true;
+    return;
+  }
+
+  verifyBtn.addEventListener('click', async () => {
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = 'جارٍ التحقق…';
+    msg(verifyMsg, '');
+
+    try {
+      const r = await g.verify({ token, whatsapp: verifyInput.value });
+      document.getElementById('meeting-whatsapp').value = r.whatsapp;
+      document.getElementById('form-token').value = token;
+      document.getElementById('verified-client-id').value = r.clientId || '';
+      document.getElementById('verified-project-id').value = r.projectId || '';
+      verifyInput.readOnly = true;
+      box.hidden = true;
+      form.hidden = false;
+    } catch (e) {
+      msg(verifyMsg, e.message === 'FORM_VERIFY_REQUEST_FAILED'
+        ? 'تعذر الاتصال بخدمة التحقق. حاول مرة أخرى.'
+        : 'رقم WhatsApp لا يطابق بيانات هذا الرابط.');
+    } finally {
+      verifyBtn.disabled = false;
+      verifyBtn.textContent = 'التحقق والمتابعة ↗';
+    }
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    msg(formMsg, '');
+
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const answers = {
+      name: form.elements.name.value.trim(),
+      email: form.elements.email.value.trim(),
+      project: form.elements.project.value.trim(),
+      goal: form.elements.goal.value.trim()
+    };
+
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'جارٍ الإرسال…';
+
+    try {
+      const result = await g.submit({
+        formType: 'meeting',
+        token,
+        whatsapp: document.getElementById('meeting-whatsapp').value,
+        answers
+      });
+
+      if (!result.ok) {
+        throw new Error(result.duplicate ? 'DUPLICATE' : 'SUBMIT_FAILED');
+      }
+
+      await g.notify({
+        formType: 'meeting',
+        token,
+        whatsapp: document.getElementById('meeting-whatsapp').value,
+        clientId: result.clientId || '',
+        projectId: result.projectId || '',
+        service: result.service || 'Meeting',
+        email: answers.email,
+        answers
+      });
+
+      form.reset();
+      form.hidden = true;
+      box.hidden = true;
+      msg(formMsg, 'تم إرسال معلومات الاجتماع بنجاح.', true);
+    } catch (e) {
+      msg(formMsg, e.message === 'DUPLICATE'
+        ? 'تم إرسال هذا النموذج مسبقًا.'
+        : 'تعذر حفظ النموذج أو إرسال الإشعار حاليًا. حاول مرة أخرى.');
+    } finally {
+      submitButton.disabled = false;
+      submitButton.textContent = 'إرسال المعلومات ↗';
+    }
+  });
+});
+</script>
+</body>
+</html>
