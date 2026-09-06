@@ -38,8 +38,9 @@ function doGet(e) {
 
   const p = (e && e.parameter) || {};
 
-  // Admin
+  // Admin — always require an allowed Google account before serving the panel.
   if (p.op === 'admin') {
+    requireAdmin_();
     return HtmlService
       .createHtmlOutputFromFile('Admin')
       .setTitle('Ahmad Khalel — Admin');
@@ -78,7 +79,13 @@ function doGet(e) {
       clientId: verified ? client.clientId : '',
       projectId: verified ? client.projectId : '',
       service: verified ? client.service : '',
-      email: verified ? client.email : ''
+      email: verified ? client.email : '',
+      formType: verified ? ({
+        'Meeting': 'meeting',
+        'Identity': 'identity',
+        'Website': 'website',
+        'Identity + Website': 'identity-website'
+      }[client.service] || '') : ''
     });
 
   } catch (err) {
@@ -279,26 +286,34 @@ function doPost(e) {
     }
 
 
+    const serviceToFormType = {
+      'Meeting': 'meeting',
+      'Identity': 'identity',
+      'Website': 'website',
+      'Identity + Website': 'identity-website'
+    };
+
+    const expectedFormType = serviceToFormType[client.service];
+
+    if (!expectedFormType || expectedFormType !== formType) {
+      return json_({
+        ok: false,
+        verified: false,
+        error: 'FORM_TYPE_NOT_ALLOWED'
+      });
+    }
+
     let sheetName = '';
 
     if (formType === 'meeting') {
-
       sheetName = CONFIG.SHEETS.MEETING;
-
     } else if (formType === 'identity') {
-
       sheetName = CONFIG.SHEETS.IDENTITY;
-
     } else if (formType === 'website') {
-
       sheetName = CONFIG.SHEETS.WEBSITE;
-
     } else if (formType === 'identity-website') {
-
       sheetName = CONFIG.SHEETS.BOTH;
-
     } else {
-
       throw new Error('Unknown form type.');
     }
 

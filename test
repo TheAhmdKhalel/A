@@ -1,15 +1,15 @@
-AKfycbyHSzQrWcFjuWk90kHR4Rz-zygT_LzZD5kGmH8L6MGA7Inr1-NpfSYKnns3AIOlsq84
+AKfycbzTlqijLtlUKsWKFBnLNgTOE4_tYiiUgWrmncmHP-F3WlyCNjUOI5lU8cdaT6HCy-TT
 
-https://script.google.com/macros/s/AKfycbyHSzQrWcFjuWk90kHR4Rz-zygT_LzZD5kGmH8L6MGA7Inr1-NpfSYKnns3AIOlsq84/exec
+https://script.google.com/macros/s/AKfycbzTlqijLtlUKsWKFBnLNgTOE4_tYiiUgWrmncmHP-F3WlyCNjUOI5lU8cdaT6HCy-TT/exec
 
 
 curl -L -X POST \
 -H "Content-Type: application/json" \
 -d '{"name":"Test User","email":"test@example.com","phone":"0000000000","service":"Website","message":"Google Sheets connection test"}' \
-"https://script.google.com/macros/s/AKfycbyHSzQrWcFjuWk90kHR4Rz-zygT_LzZD5kGmH8L6MGA7Inr1-NpfSYKnns3AIOlsq84/exec"
+"https://script.google.com/macros/s/AKfycbzTlqijLtlUKsWKFBnLNgTOE4_tYiiUgWrmncmHP-F3WlyCNjUOI5lU8cdaT6HCy-TT/exec"
 
 
-curl.exe -L -X POST -H "Content-Type: application/json" -d "{\"name\":\"Test User\",\"email\":\"test@example.com\",\"phone\":\"0000000000\",\"service\":\"Website\",\"message\":\"Google Sheets connection test\"}" "https://script.google.com/macros/s/AKfycbyHSzQrWcFjuWk90kHR4Rz-zygT_LzZD5kGmH8L6MGA7Inr1-NpfSYKnns3AIOlsq84/exec"
+curl.exe -L -X POST -H "Content-Type: application/json" -d "{\"name\":\"Test User\",\"email\":\"test@example.com\",\"phone\":\"0000000000\",\"service\":\"Website\",\"message\":\"Google Sheets connection test\"}" "https://script.google.com/macros/s/AKfycbzTlqijLtlUKsWKFBnLNgTOE4_tYiiUgWrmncmHP-F3WlyCNjUOI5lU8cdaT6HCy-TT/exec"
 
 curl: (3) URL rejected: Port number was not a decimal number between 0 and 65535
 curl: (3) URL rejected: Port number was not a decimal number between 0 and 65535
@@ -29,9 +29,6 @@ curl: (3) URL rejected: Bad hostname
   <p>POST requests require a <code>Content-length</code> header.  <ins>That’s all we know.</ins>
 
 
-  Invoke-RestMethod -Uri "https://script.google.com/macros/s/AKfycbyHSzQrWcFjuWk90kHR4Rz-zygT_LzZD5kGmH8L6MGA7Inr1-NpfSYKnns3AIOlsq84/exec" -Method Post -ContentType "application/json" -Body '{"name":"Test User","email":"test@example.com","phone":"0000000000","service":"Website","message":"Google Sheets connection test"}'
+  Invoke-RestMethod -Uri "https://script.google.com/macros/s/AKfycbzTlqijLtlUKsWKFBnLNgTOE4_tYiiUgWrmncmHP-F3WlyCNjUOI5lU8cdaT6HCy-TT/exec" -Method Post -ContentType "application/json" -Body '{"name":"Test User","email":"test@example.com","phone":"0000000000","service":"Website","message":"Google Sheets connection test"}'
 
   1Be2g2VCNt5v3zX6OxbWL0DrRySSbpCDige16us7T5Rk
-
-
-  fae80777-5bb6-4044-beb2-d2f0d09874c3

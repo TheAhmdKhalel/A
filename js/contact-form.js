@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const sendWeb3Email = async (payload) => {
-        if (!web3AccessKey) throw new Error("fae80777-5bb6-4044-beb2-d2f0d09874c3");
+        if (!web3AccessKey) throw new Error("WEB3_ACCESS_KEY_MISSING");
 
         const response = await fetch("https://api.web3forms.com/submit", {
             method: "POST",

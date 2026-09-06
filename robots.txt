@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /meeting/
+Disallow: /form-identity/
+Disallow: /form-website/
+Disallow: /form-identity-website/
 
 Sitemap: https://ahmadkhalel.com/sitemap.xml
