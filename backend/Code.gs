@@ -10,10 +10,9 @@ const CONFIG = {
   // بريدك الذي يستقبل إشعارات الطلبات
   NOTIFICATION_EMAIL: 'work.khalel@gmail.com',
 
-  // البريد المسموح له بالدخول إلى لوحة Admin
-  ADMIN_EMAILS: [
-    'work.khalel@gmail.com'
-  ],
+  // Admin authentication is password-based.
+  // Set ADMIN_PASSWORD_HASH once in Script Properties using setAdminPassword().
+  ADMIN_SESSION_SECONDS: 21600,
 
   // ==============================
   // أسماء أوراق Google Sheets
@@ -40,7 +39,6 @@ function doGet(e) {
 
   // Admin — always require an allowed Google account before serving the panel.
   if (p.op === 'admin') {
-    requireAdmin_();
     return HtmlService
       .createHtmlOutputFromFile('Admin')
       .setTitle('Ahmad Khalel — Admin');
@@ -100,40 +98,130 @@ function doGet(e) {
 
 
 // ============================================
-// ADMIN — CREATE CLIENT
+// ADMIN — AUTHENTICATION + CLIENTS
 // ============================================
 
-function createClientFromAdmin(client) {
+function loginAdmin(password) {
+  const configured = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD_HASH');
+  if (!configured) {
+    throw new Error('ADMIN_PASSWORD_NOT_CONFIGURED');
+  }
 
-  requireAdmin_();
+  const supplied = sha256_(clean_(password));
+  if (supplied !== configured) {
+    throw new Error('INVALID_ADMIN_PASSWORD');
+  }
 
-  return createClient_(client);
+  const sessionToken = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+  CacheService.getScriptCache().put(
+    'admin_session_' + sessionToken,
+    '1',
+    CONFIG.ADMIN_SESSION_SECONDS
+  );
+
+  return { ok: true, sessionToken };
 }
 
+function logoutAdmin(sessionToken) {
+  if (sessionToken) {
+    CacheService.getScriptCache().remove('admin_session_' + clean_(sessionToken));
+  }
+  return { ok: true };
+}
+
+function requireAdminSession_(sessionToken) {
+  const token = clean_(sessionToken);
+  if (!token || CacheService.getScriptCache().get('admin_session_' + token) !== '1') {
+    throw new Error('ADMIN_SESSION_EXPIRED');
+  }
+}
+
+function createClientFromAdmin(payload) {
+  const p = payload || {};
+  requireAdminSession_(p.sessionToken);
+  return createClient_(p.client);
+}
+
+function ensureClientsSheet_() {
+  const sheet = getOrCreateSheet_(CONFIG.SHEETS.CLIENTS);
+  const headers = ['Client Number','Client ID','Project ID','Service','WhatsApp','Email','Token','Status','Last Submitted At'];
+
+  if (sheet.getLastRow() === 0) {
+    sheet.getRange(1,1,1,headers.length).setValues([headers]);
+    return sheet;
+  }
+
+  const current = sheet.getRange(1,1,Math.max(sheet.getLastColumn(), 1)).getValues()[0].map(String);
+  if (current[0] === 'Client ID' && current.length < 9) {
+    // v5.3 compatibility: keep the old Client ID as both the legacy client number and generated ID.
+    sheet.insertColumnBefore(1);
+    sheet.getRange(1,1,1,9).setValues([headers]);
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+      const oldIds = sheet.getRange(2,2,lastRow-1,1).getValues();
+      sheet.getRange(2,1,lastRow-1,1).setValues(oldIds);
+      sheet.getRange(2,2,lastRow-1,1).setValues(oldIds);
+    }
+    return sheet;
+  }
+
+  if (current.join('|') !== headers.join('|')) {
+    ensureHeaders_(sheet, headers);
+  }
+  return sheet;
+}
+
+function listClientsFromAdmin(sessionToken) {
+  requireAdminSession_(sessionToken);
+
+  const sheet = ensureClientsSheet_();
+  const values = sheet.getDataRange().getValues();
+  if (values.length <= 1) return [];
+
+  return values.slice(1).map((row, i) => ({
+    row: i + 2,
+    clientNumber: clean_(row[0]),
+    clientId: clean_(row[1]),
+    projectId: clean_(row[2]),
+    service: clean_(row[3]),
+    whatsapp: clean_(row[4]),
+    email: clean_(row[5]),
+    token: clean_(row[6]),
+    status: clean_(row[7]) || 'Active',
+    lastSubmittedAt: row[8] ? new Date(row[8]).toISOString() : '',
+    formUrl: buildFormUrl_(clean_(row[3]), clean_(row[6]))
+  }));
+}
+
+function setClientStatusFromAdmin(payload) {
+  const p = payload || {};
+  requireAdminSession_(p.sessionToken);
+
+  const row = Number(p.row);
+  const status = clean_(p.status);
+
+  if (!row || (status !== 'Active' && status !== 'Inactive')) {
+    throw new Error('INVALID_CLIENT_STATUS');
+  }
+
+  const sheet = getOrCreateSheet_(CONFIG.SHEETS.CLIENTS);
+  sheet.getRange(row, 8).setValue(status);
+  return { ok: true, row, status };
+}
 
 function createClient_(client) {
-
   const c = client || {};
 
-  const clientId = clean_(c.clientId);
-  const projectId = clean_(c.projectId);
+  // Admin only needs: client number, WhatsApp/phone, email and service.
+  // Client ID + Project ID + Token are generated automatically.
+  const clientNumber = clean_(c.clientNumber);
   const service = clean_(c.service);
-
   const whatsapp = normalizePhone_(c.whatsapp);
   const email = clean_(c.email);
+  const status = 'Active';
 
-  const status = clean_(c.status) || 'Active';
-
-  if (
-    !clientId ||
-    !projectId ||
-    !service ||
-    !whatsapp ||
-    !email
-  ) {
-    throw new Error(
-      'Client ID, Project ID, Service, WhatsApp, and Email are required.'
-    );
+  if (!clientNumber || !service || !whatsapp || !email) {
+    throw new Error('Client number, phone, service, and email are required.');
   }
 
   if (
@@ -145,35 +233,24 @@ function createClient_(client) {
     throw new Error('Invalid service.');
   }
 
-  const sheet = getOrCreateSheet_(CONFIG.SHEETS.CLIENTS);
-
-  ensureHeaders_(sheet, [
-    'Client ID',
-    'Project ID',
-    'Service',
-    'WhatsApp',
-    'Email',
-    'Token',
-    'Status',
-    'Last Submitted At'
-  ]);
-
+  const sheet = ensureClientsSheet_();
   const rows = sheet.getDataRange().getValues();
 
   for (let i = 1; i < rows.length; i++) {
-
-    if (clean_(rows[i][0]) === clientId) {
-      throw new Error('Client ID already exists.');
+    if (clean_(rows[i][0]) === clientNumber) {
+      throw new Error('Client number already exists.');
     }
-
-    if (clean_(rows[i][1]) === projectId) {
-      throw new Error('Project ID already exists.');
+    if (normalizePhone_(rows[i][4]) === whatsapp && clean_(rows[i][5]).toLowerCase() === email.toLowerCase()) {
+      throw new Error('A client with this phone and email already exists.');
     }
   }
 
+  const clientId = generateClientId_();
+  const projectId = generateProjectId_();
   const token = generateToken_();
 
   sheet.appendRow([
+    clientNumber,
     clientId,
     projectId,
     service,
@@ -184,19 +261,8 @@ function createClient_(client) {
     ''
   ]);
 
-  const base = String(CONFIG.SITE_BASE_URL || '')
-    .replace(/\/$/, '');
-
-  const formPath =
-    service === 'Meeting'
-      ? 'meeting'
-      : service === 'Identity'
-        ? 'form-identity'
-        : service === 'Website'
-          ? 'form-website'
-          : 'form-identity-website';
-
   return {
+    clientNumber,
     clientId,
     projectId,
     service,
@@ -204,15 +270,49 @@ function createClient_(client) {
     email,
     status,
     token,
-    formUrl:
-      base +
-      '/' +
-      formPath +
-      '/?token=' +
-      encodeURIComponent(token)
+    formUrl: buildFormUrl_(service, token)
   };
 }
 
+function generateClientId_() {
+  return 'AK-' + Utilities.getUuid().replace(/-/g, '').substring(0, 8).toUpperCase();
+}
+
+function generateProjectId_() {
+  return 'P-' + new Date().getFullYear() + '-' + Utilities.getUuid().replace(/-/g, '').substring(0, 6).toUpperCase();
+}
+
+function buildFormUrl_(service, token) {
+  const base = String(CONFIG.SITE_BASE_URL || '').replace(/\/$/, '');
+  const formPath =
+    service === 'Meeting' ? 'meeting' :
+    service === 'Identity' ? 'form-identity' :
+    service === 'Website' ? 'form-website' :
+    'form-identity-website';
+
+  return base + '/' + formPath + '/?token=' + encodeURIComponent(token);
+}
+
+function sha256_(value) {
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    String(value),
+    Utilities.Charset.UTF_8
+  );
+  return digest.map(b => {
+    const v = (b < 0 ? b + 256 : b).toString(16);
+    return v.length === 1 ? '0' + v : v;
+  }).join('');
+}
+
+// Run once manually from Apps Script editor, enter your chosen password.
+// The password itself is never stored in Code.gs.
+function setAdminPassword() {
+  const password = Browser.inputBox('Admin password', 'Enter a strong password:', Browser.Buttons.OK_CANCEL);
+  if (!password || password === 'cancel') throw new Error('Password setup cancelled.');
+  PropertiesService.getScriptProperties().setProperty('ADMIN_PASSWORD_HASH', sha256_(password));
+  return 'Admin password configured successfully.';
+}
 
 // ============================================
 // POST
@@ -256,11 +356,9 @@ function doPost(e) {
 
     if (body.action === 'createClient') {
 
-      requireAdmin_();
-
       return json_({
         ok: true,
-        client: createClient_(body.client)
+        client: createClientFromAdmin(body)
       });
     }
 
@@ -466,20 +564,7 @@ function handleContact_(body) {
 
 function findClientByToken_(token) {
 
-  const sheet =
-    getOrCreateSheet_(CONFIG.SHEETS.CLIENTS);
-
-
-  ensureHeaders_(sheet, [
-    'Client ID',
-    'Project ID',
-    'Service',
-    'WhatsApp',
-    'Email',
-    'Token',
-    'Status',
-    'Last Submitted At'
-  ]);
+  const sheet = ensureClientsSheet_();
 
 
   const values =
@@ -520,6 +605,7 @@ function findClientByToken_(token) {
       return {
         row: r + 2,
         clientId: row[idx['Client ID']],
+        clientNumber: row[idx['Client Number']],
         projectId: row[idx['Project ID']],
         service: row[idx['Service']],
         whatsapp: row[idx['WhatsApp']],
@@ -595,21 +681,6 @@ function markClientSubmission_(row) {
       )
       .getValues()[0]
       .map(String);
-
-
-  const statusIndex =
-    headers.indexOf('Status');
-
-
-  if (statusIndex >= 0) {
-
-    sheet
-      .getRange(
-        row,
-        statusIndex + 1
-      )
-      .setValue('Submitted');
-  }
 
 
   const submittedIndex =
@@ -719,42 +790,3 @@ function json_(object) {
 }
 
 
-// ============================================
-// ADMIN ACCESS
-// ============================================
-
-function requireAdmin_() {
-
-  const email =
-    String(
-      Session
-        .getActiveUser()
-        .getEmail() || ''
-    )
-    .trim()
-    .toLowerCase();
-
-
-  const allowed =
-    (CONFIG.ADMIN_EMAILS || [])
-      .map(x =>
-        String(x || '')
-          .trim()
-          .toLowerCase()
-      )
-      .filter(Boolean);
-
-
-  if (
-    !email ||
-    allowed.indexOf(email) < 0 ||
-    allowed.indexOf(
-      'replace_with_your_google_email'
-    ) >= 0
-  ) {
-
-    throw new Error(
-      'Admin access denied.'
-    );
-  }
-}

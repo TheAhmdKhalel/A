@@ -1,77 +1,131 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ahmad Khalel — Admin</title>
-  <style>
-    :root{font-family:Arial,sans-serif;color:#1d1d1d;background:#f5f3ef}
-    *{box-sizing:border-box}body{margin:0;padding:32px}.wrap{max-width:900px;margin:auto;background:#fff;padding:32px;border:1px solid #e6e2da;border-radius:18px}
-    h1{margin:0 0 8px;font-size:28px}.muted{color:#6f6b63;margin:0 0 28px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}label{display:block;font-weight:700;font-size:14px}input,select{width:100%;margin-top:8px;padding:13px 14px;border:1px solid #d8d2c8;border-radius:10px;font:inherit;background:#fff}button{margin-top:22px;padding:13px 18px;border:0;border-radius:10px;background:#1d1d1d;color:#fff;font:inherit;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}.result{margin-top:24px;padding:18px;border-radius:12px;background:#f1efe9;display:none}.result strong{display:block;margin-bottom:8px}.result code{display:block;word-break:break-all;padding:10px;background:#fff;border-radius:8px;margin-top:8px}.status{margin-top:16px;min-height:22px}.ok{color:#2d6a4f}.err{color:#a33}
-    @media(max-width:680px){.grid{grid-template-columns:1fr}body{padding:16px}.wrap{padding:22px}}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ahmad Khalel — Admin</title>
+<style>
+:root{font-family:Arial,sans-serif;color:#20201e;background:#f3f1ec;--line:#ded9cf;--soft:#ebe8e1}
+*{box-sizing:border-box}body{margin:0;padding:28px}.wrap{max-width:1100px;margin:auto}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:28px;box-shadow:0 12px 40px #00000008}
+h1,h2,p{margin-top:0}h1{font-size:30px;margin-bottom:8px}.muted{color:#77736b}.hidden{display:none!important}
+.login{max-width:480px;margin:8vh auto}.brand{letter-spacing:.08em;font-size:12px;text-transform:uppercase;margin-bottom:20px}
+input,select{width:100%;padding:13px 14px;border:1px solid #d3cec4;border-radius:11px;font:inherit;background:#fff}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:8px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.full{grid-column:1/-1}
+button{border:0;border-radius:11px;padding:12px 16px;font:inherit;font-weight:700;cursor:pointer;background:#20201e;color:white}
+button.secondary{background:var(--soft);color:#20201e}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.status{min-height:22px;margin-top:14px;font-size:14px}.ok{color:#276749}.err{color:#a33}
+.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}.stats{display:flex;gap:10px}.stat{background:var(--soft);padding:12px 15px;border-radius:12px;font-size:13px}
+.client-list{display:grid;gap:12px;margin-top:18px}.client{border:1px solid var(--line);border-radius:15px;padding:17px;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center}
+.client h3{margin:0 0 5px;font-size:17px}.meta{font-size:13px;color:#716d66;line-height:1.8}.link{word-break:break-all;background:#f5f3ee;padding:9px;border-radius:8px;margin-top:8px;font-size:12px}
+.badge{display:inline-block;padding:4px 9px;border-radius:99px;font-size:11px;background:#e8eee9}.inactive{background:#eee9e6}.client-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.empty{padding:35px;text-align:center;color:#777;border:1px dashed var(--line);border-radius:14px}
+@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.client{grid-template-columns:1fr}.top{flex-direction:column}.client-actions{justify-content:flex-start}}
+@media(max-width:560px){body{padding:14px}.card{padding:20px}.grid{grid-template-columns:1fr}.stats{width:100%}.stat{flex:1}}
+</style>
 </head>
 <body>
-  <main class="wrap">
-    <h1>Client / Project</h1>
-    <p class="muted">Create a client record, generate a unique project token, and get the private form link.</p>
-    <form id="admin-form">
-      <div class="grid">
-        <div><label>Client ID<input name="clientId" placeholder="AK-2026-001" required></label></div>
-        <div><label>Project ID<input name="projectId" placeholder="AK-2026-001-P01" required></label></div>
-        <div><label>Service<select name="service" required><option value="Meeting">Meeting</option><option value="Identity">Identity</option><option value="Website">Website</option><option value="Identity + Website">Identity + Website</option></select></label></div>
-        <div><label>WhatsApp<input name="whatsapp" placeholder="+9639XXXXXXXX" required></label></div>
-        <div><label>Email<input type="email" name="email" placeholder="client@example.com" required></label></div>
-        <div><label>Status<select name="status"><option value="Active">Active</option><option value="Revoked">Revoked</option></select></label></div>
-      </div>
-      <button id="create" type="submit">Create client & generate link</button>
-    </form>
-    <div class="status" id="status"></div>
-    <section class="result" id="result">
-      <strong>Client created</strong>
-      <div>Client ID: <span id="out-client"></span></div>
-      <div>Project ID: <span id="out-project"></span></div>
-      <div>Token:</div><code id="out-token"></code>
-      <div>Private form URL:</div><code id="out-url"></code>
-    </section>
-  </main>
-  <script>
-const form=document.getElementById('admin-form');
-const btn=document.getElementById('create');
-const status=document.getElementById('status');
-const result=document.getElementById('result');
+<div class="wrap">
+<section id="login" class="card login">
+<div class="brand">AHMAD KHALEL / ADMIN</div>
+<h1>Admin Access</h1>
+<p class="muted">Enter your private admin password to continue.</p>
+<form id="loginForm">
+<label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+<div class="actions"><button type="submit">Sign in</button></div>
+<div id="loginStatus" class="status"></div>
+</form>
+</section>
 
-function showStatus(text, ok=false){
-  status.className='status '+(ok?'ok':'err');
-  status.textContent=text;
-}
-form.addEventListener('submit',(e)=>{
-  e.preventDefault();
-  result.style.display='none';
-  showStatus('Creating…', true);
-  btn.disabled=true;
-  const payload=Object.fromEntries(new FormData(form).entries());
-  if (!window.google || !google.script || !google.script.run){
-    showStatus('Open this page from the deployed Google Apps Script Admin URL.');
-    btn.disabled=false;
-    return;
-  }
-  google.script.run
-    .withSuccessHandler((data)=>{
-      document.getElementById('out-client').textContent=data.clientId;
-      document.getElementById('out-project').textContent=data.projectId;
-      document.getElementById('out-token').textContent=data.token;
-      document.getElementById('out-url').textContent=data.formUrl;
-      result.style.display='block';
-      showStatus('Client created successfully.', true);
-      btn.disabled=false;
-    })
-    .withFailureHandler((err)=>{
-      showStatus((err && err.message) || 'Could not create client.');
-      btn.disabled=false;
-    })
-    .createClientFromAdmin(payload);
+<section id="dashboard" class="hidden">
+<div class="top">
+<div><div class="brand">AHMAD KHALEL / ADMIN</div><h1>Clients</h1><p class="muted">Manage active and inactive clients and generate private form links.</p></div>
+<div class="actions"><button class="secondary" id="logout">Log out</button></div>
+</div>
+
+<div class="card">
+<h2>Add Client</h2>
+<p class="muted">Only enter the client number, phone, email and service. IDs and token are generated automatically.</p>
+<form id="clientForm">
+<div class="grid">
+<div><label>Client Number<input name="clientNumber" placeholder="001" required></label></div>
+<div><label>WhatsApp / Phone<input name="whatsapp" type="tel" placeholder="+963..." required></label></div>
+<div><label>Email<input name="email" type="email" placeholder="client@example.com" required></label></div>
+<div><label>Service<select name="service" required>
+<option value="Meeting">Meeting</option><option value="Identity">Visual Identity</option>
+<option value="Website">Personal Website</option><option value="Identity + Website">Identity + Website</option>
+</select></label></div>
+</div>
+<div class="actions"><button id="create">Add Client & Generate Link</button></div>
+<div id="createStatus" class="status"></div>
+</form>
+<div id="created" class="card hidden" style="margin-top:18px;background:#f8f7f3">
+<h3>Client created successfully</h3>
+<div id="createdInfo"></div>
+<div class="actions">
+<button id="copyLink">Copy Link</button><button class="secondary" id="shareLink">Share</button><button class="secondary" id="openLink">Open</button>
+</div>
+</div>
+</div>
+
+<div class="card" style="margin-top:18px">
+<div class="top" style="margin-bottom:0">
+<div><h2>Client List</h2><div class="stats"><span class="stat" id="activeCount">Active: 0</span><span class="stat" id="inactiveCount">Inactive: 0</span></div></div>
+<select id="filter" style="max-width:190px"><option value="all">All clients</option><option value="Active">Active clients</option><option value="Inactive">Inactive clients</option></select>
+</div>
+<div id="clients" class="client-list"></div>
+</div>
+</section>
+</div>
+
+<script>
+'use strict';
+let sessionToken='';
+let clients=[];
+let lastCreatedUrl='';
+
+const $=id=>document.getElementById(id);
+const call=(method,...args)=>new Promise((resolve,reject)=>{
+  if(!window.google||!google.script||!google.script.run){reject(new Error('Open this page from the deployed Apps Script Admin URL.'));return}
+  google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args);
 });
+function status(id,text,ok=false){$(id).className='status '+(ok?'ok':'err');$(id).textContent=text}
+function showDashboard(){ $('login').classList.add('hidden'); $('dashboard').classList.remove('hidden'); loadClients(); }
+
+$('loginForm').addEventListener('submit',async e=>{
+ e.preventDefault(); status('loginStatus','Signing in…',true);
+ try{const r=await call('loginAdmin',$('password').value); sessionToken=r.sessionToken; sessionStorage.setItem('ak_admin_session',sessionToken); showDashboard();}
+ catch(err){status('loginStatus',err.message||'Invalid password.')}
+});
+$('clientForm').addEventListener('submit',async e=>{
+ e.preventDefault(); $('create').disabled=true; status('createStatus','Creating client…',true); $('created').classList.add('hidden');
+ try{
+  const payload=Object.fromEntries(new FormData(e.target).entries());
+  const r=await call('createClientFromAdmin',{sessionToken,client:payload});
+  lastCreatedUrl=r.formUrl;
+  $('createdInfo').innerHTML='<div><b>Client ID:</b> '+esc(r.clientId)+'</div><div><b>Project ID:</b> '+esc(r.projectId)+'</div><div><b>Service:</b> '+esc(r.service)+'</div><div class="link" id="generatedLink">'+esc(r.formUrl)+'</div>';
+  $('created').classList.remove('hidden'); status('createStatus','Client added to Active Clients.',true); e.target.reset(); loadClients();
+ }catch(err){status('createStatus',err.message||'Could not create client.')}finally{$('create').disabled=false}
+});
+$('filter').addEventListener('change',renderClients);
+$('logout').addEventListener('click',async()=>{try{await call('logoutAdmin',sessionToken)}catch(_){} sessionStorage.removeItem('ak_admin_session');sessionToken='';location.reload()});
+$('copyLink').addEventListener('click',()=>copy(lastCreatedUrl));
+$('shareLink').addEventListener('click',async()=>{if(navigator.share)await navigator.share({title:'Client form',url:lastCreatedUrl});else copy(lastCreatedUrl)});
+$('openLink').addEventListener('click',()=>window.open(lastCreatedUrl,'_blank','noopener'));
+
+async function loadClients(){try{clients=await call('listClientsFromAdmin',sessionToken);renderClients()}catch(err){if((err.message||'').includes('SESSION')){sessionStorage.removeItem('ak_admin_session');location.reload()}else console.error(err)}}
+function renderClients(){
+ const f=$('filter').value; const active=clients.filter(c=>c.status==='Active'), inactive=clients.filter(c=>c.status==='Inactive');
+ $('activeCount').textContent='Active: '+active.length;$('inactiveCount').textContent='Inactive: '+inactive.length;
+ const list=clients.filter(c=>f==='all'||c.status===f);
+ $('clients').innerHTML=list.length?list.map(c=>`<article class="client"><div><h3>${esc(c.clientId)} <span class="badge ${c.status==='Inactive'?'inactive':''}">${esc(c.status)}</span></h3><div class="meta">Client #${esc(c.clientNumber||c.clientId)} · ${esc(c.service)} · ${esc(c.email)} · ${esc(c.whatsapp)}</div><div class="link">${esc(c.formUrl)}</div></div><div class="client-actions"><button onclick="copy('${js(c.formUrl)}')">Copy</button><button class="secondary" onclick="window.open('${js(c.formUrl)}','_blank','noopener')">Open</button><button class="secondary" onclick="share('${js(c.formUrl)}')">Share</button><button class="secondary" onclick="toggleStatus(${c.row},'${c.status}')">${c.status==='Active'?'Deactivate':'Activate'}</button></div></article>`).join(''):'<div class="empty">No clients in this filter.</div>';
+}
+async function toggleStatus(row,current){try{await call('setClientStatusFromAdmin',{sessionToken,row,status:current==='Active'?'Inactive':'Active'});loadClients()}catch(err){alert(err.message||'Could not update client.')}}
+async function copy(url){try{await navigator.clipboard.writeText(url);alert('Link copied.')}catch(_){prompt('Copy this link:',url)}}
+async function share(url){if(navigator.share)await navigator.share({title:'Client form',url});else copy(url)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function js(s){return String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
+const saved=sessionStorage.getItem('ak_admin_session'); if(saved){sessionToken=saved;showDashboard()}
 </script>
 </body>
 </html>

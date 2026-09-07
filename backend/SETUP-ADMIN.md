@@ -1,20 +1,51 @@
-# Admin + Google Sheets setup
+# Admin 5.4 — setup
 
-1. Create a Google Sheet for the project.
-2. Open Extensions → Apps Script.
-3. Copy `Code.gs` and `Admin.html` from this folder into the Apps Script project.
-4. In `Code.gs`, set:
-   - `SPREADSHEET_ID` to the Sheet ID.
-   - `ADMIN_EMAILS` to the Google account(s) that should manage clients.
-5. Deploy → New deployment → Web app. If this Apps Script project was deployed before, create a NEW deployment (or update the existing deployment to the newest version) after replacing both files. The `/exec` URL that still returns `Ahmad Khalel Website API is working.` is an older deployment and will not contain the Admin panel.
-6. Use the deployed `/exec` URL for the forms by placing it in `js/form-config.js`:
-   `window.AHMAD_FORMS_CONFIG = { endpoint: "YOUR_EXEC_URL" };`
-7. Sign in to the same Google account listed in `ADMIN_EMAILS`, then open the Admin URL with `?op=admin`. Example: `https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?op=admin`.
-8. If the URL still shows the API message, the deployment was not updated; deploy the latest code again.
-9. Add a client. The panel generates Client ID, Project ID, service, token and private form URL.
-10. Send the generated private URL to the client after the meeting.
+## 1. Google Apps Script
 
-Security:
-- Do not put the Sheet ID, Admin credentials, or Apps Script deployment URL in public documentation beyond what the forms need.
-- Keep the Admin deployment restricted to the allowed Google accounts.
-- Never place `ADMIN_EMAILS` or other secrets in the GitHub-hosted JavaScript.
+Copy `backend/Code.gs` and `backend/Admin.html` into the same Apps Script project used by the forms.
+
+Make sure `CONFIG.SPREADSHEET_ID` and `CONFIG.SITE_BASE_URL` are correct.
+
+## 2. Set the Admin password
+
+In the Apps Script editor, select the function **`setAdminPassword`** and run it once.
+
+A dialog will ask for your password. The password is stored only as a SHA-256 hash in Script Properties; it is not written into `Code.gs` or GitHub.
+
+Use a strong unique password.
+
+## 3. Deploy
+
+Deploy the Apps Script as a Web App and use the deployed `/exec` URL.
+
+The Admin page is:
+
+`YOUR_EXEC_URL?op=admin`
+
+The Admin panel now uses password authentication and provides:
+- Add Client
+- Automatic Client ID
+- Automatic Project ID
+- Automatic secure Token
+- Automatic private form URL
+- Copy / Share / Open
+- Active Clients
+- Inactive Clients
+- Active / Inactive filter
+- Activate / Deactivate
+
+## 4. Client creation
+
+When adding a client, enter only:
+- Client Number
+- WhatsApp / Phone
+- Email
+- Service
+
+The system automatically generates the internal IDs and token and puts the new client in **Active Clients**.
+
+## 5. Important
+
+The public GitHub Pages site does not contain the Admin password or Google Sheet credentials.
+
+The existing private forms continue to use token + WhatsApp verification.
