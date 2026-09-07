@@ -8,9 +8,13 @@ Make sure `CONFIG.SPREADSHEET_ID` and `CONFIG.SITE_BASE_URL` are correct.
 
 ## 2. Set the Admin password
 
-In the Apps Script editor, select the function **`setAdminPassword`** and run it once.
+In the Apps Script editor, select **`setAdminPassword`** and click **Run** once.
 
-A dialog will ask for your password. The password is stored only as a SHA-256 hash in Script Properties; it is not written into `Code.gs` or GitHub.
+The function returns a one-time setup URL. Copy that URL from the execution result and open it in your browser.
+
+A secure setup page will appear. Enter the password twice and save it.
+
+The setup URL expires after 15 minutes and is deleted immediately after successful setup. The password is stored only as a SHA-256 hash in Script Properties; it is not written into `Code.gs` or GitHub.
 
 Use a strong unique password.
 
