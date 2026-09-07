@@ -37,6 +37,18 @@ button.secondary{background:var(--soft);color:#20201e}.actions{display:flex;gap:
 </form>
 </section>
 
+<section id="setup" class="card login hidden">
+<div class="brand">AHMAD KHALEL / ADMIN</div>
+<h1>Set Admin Password</h1>
+<p class="muted">This is the first-time setup. Create a password of at least 10 characters.</p>
+<form id="setupForm">
+<label>Password<input id="newPassword" type="password" autocomplete="new-password" minlength="10" required></label>
+<label>Confirm Password<input id="confirmPassword" type="password" autocomplete="new-password" minlength="10" required></label>
+<div class="actions"><button type="submit">Create Password</button></div>
+<div id="setupStatus" class="status"></div>
+</form>
+</section>
+
 <section id="dashboard" class="hidden">
 <div class="top">
 <div><div class="brand">AHMAD KHALEL / ADMIN</div><h1>Clients</h1><p class="muted">Manage active and inactive clients and generate private form links.</p></div>
@@ -90,7 +102,17 @@ const call=(method,...args)=>new Promise((resolve,reject)=>{
   google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args);
 });
 function status(id,text,ok=false){$(id).className='status '+(ok?'ok':'err');$(id).textContent=text}
-function showDashboard(){ $('login').classList.add('hidden'); $('dashboard').classList.remove('hidden'); loadClients(); }
+function showDashboard(){ $('setup').classList.add('hidden'); $('login').classList.add('hidden'); $('dashboard').classList.remove('hidden'); loadClients(); }
+function showSetup(){ $('login').classList.add('hidden'); $('dashboard').classList.add('hidden'); $('setup').classList.remove('hidden'); }
+async function checkAdminSetup(){ try{ const r=await call('getAdminSetupStatus'); if(r.configured){ checkAdminSetup(); else $('login').classList.remove('hidden'); } else showSetup(); }catch(err){ $('loginStatus').textContent=err.message||'Unable to load admin.'; $('loginStatus').className='status err'; } }
+
+$('setupForm').addEventListener('submit',async e=>{
+ e.preventDefault(); const a=$('newPassword').value,b=$('confirmPassword').value;
+ if(a!==b){status('setupStatus','Passwords do not match.');return}
+ if(a.length<10){status('setupStatus','Password must be at least 10 characters.');return}
+ try{ await call('setupAdminPassword',a); status('setupStatus','Password created successfully.',true); $('newPassword').value='';$('confirmPassword').value=''; setTimeout(()=>{ $('setup').classList.add('hidden'); $('login').classList.remove('hidden'); },500); }
+ catch(err){status('setupStatus',err.message||'Could not create password.')}
+});
 
 $('loginForm').addEventListener('submit',async e=>{
  e.preventDefault(); status('loginStatus','Signing in…',true);
@@ -125,7 +147,7 @@ async function copy(url){try{await navigator.clipboard.writeText(url);alert('Lin
 async function share(url){if(navigator.share)await navigator.share({title:'Client form',url});else copy(url)}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function js(s){return String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")}
-const saved=sessionStorage.getItem('ak_admin_session'); if(saved){sessionToken=saved;showDashboard()}
+checkAdminSetup();
 </script>
 </body>
 </html>

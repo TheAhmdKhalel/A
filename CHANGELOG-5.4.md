@@ -17,3 +17,8 @@
 ## Still planned
 - Full Arabic/English content pass across every page and form.
 - Real Selected Work projects and case-study pages once projects are ready.
+
+
+## 5.4.2
+- Fixed first-time Admin password setup: it now appears directly inside the Admin page instead of relying on a returned Apps Script setup URL.
+- Removed the need to run `setAdminPassword` for initial setup.

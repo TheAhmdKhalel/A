@@ -328,6 +328,17 @@ function sha256_(value) {
 
 // Run once manually from Apps Script editor, enter your chosen password.
 // The password itself is never stored in Code.gs.
+function setupAdminPassword(password) {
+  const props = PropertiesService.getScriptProperties();
+  if (props.getProperty('ADMIN_PASSWORD_HASH')) {
+    throw new Error('ADMIN_PASSWORD_ALREADY_CONFIGURED');
+  }
+  const value = String(password || '');
+  if (value.length < 10) throw new Error('PASSWORD_TOO_SHORT');
+  props.setProperty('ADMIN_PASSWORD_HASH', sha256_(value));
+  return { ok: true };
+}
+
 function setAdminPassword() {
   // Standalone Apps Script projects do not reliably support Browser.inputBox().
   // Run this function once from the Apps Script editor. It creates a one-time
